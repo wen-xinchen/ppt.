@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEVENTEEN 資訊資料庫 — LLM Wiki</title>
+  <style>
+    :root {
+      --rose-quartz: #F7CAC9;
+      --rose-soft: #FDF5F5;
+      --serenity: #92A8D1;
+      --serenity-soft: #F2F5FA;
+      --serenity-dark: #5C76A6;
+      --bg-main: #FAFAFC;
+      --bg-card: #FFFFFF;
+      --text-main: #1E2430;
+      --text-muted: #5A6475;
+      --border-color: #E2E8F0;
+      --shadow-sm: 0 2px 8px rgba(30, 36, 48, 0.05);
+      --shadow-md: 0 8px 24px rgba(146, 168, 209, 0.16);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.7;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .top-accent {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--rose-quartz) 0%, var(--serenity) 100%);
+      z-index: 1000;
+    }
+
+    aside.sidebar {
+      width: 280px;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      padding: 24px 18px;
+      position: fixed;
+      top: 4px; bottom: 0; left: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-badge {
+      display: inline-block;
+      width: fit-content;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--rose-quartz), var(--serenity));
+      color: #1E2430;
+    }
+
+    .brand h1 { font-size: 19px; font-weight: 800; margin-top: 4px; }
+    .brand p { font-size: 12px; color: var(--text-muted); }
+
+    .slides-cta {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      background: linear-gradient(90deg, var(--rose-quartz), var(--serenity));
+      color: #1E2430;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 13px;
+      background: var(--bg-main);
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .nav-group h3 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      padding-left: 8px;
+    }
+
+    .nav-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .nav-item {
+      padding: 7px 10px;
+      border-radius: 7px;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-item:hover { background: var(--serenity-soft); }
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(247, 202, 201, 0.38) 0%, rgba(146, 168, 209, 0.32) 100%);
+      font-weight: 700;
+    }
+    .nav-tag {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-main);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    main.content-wrapper {
+      margin-left: 280px;
+      flex: 1;
+      padding: 36px 48px 80px;
+      max-width: 1060px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .breadcrumb { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    .breadcrumb span.link { color: var(--serenity-dark); cursor: pointer; font-weight: 600; }
+    .agents-pill {
+      font-size: 12px;
+      background: var(--rose-soft);
+      border: 1px solid var(--rose-quartz);
+      color: #6B3A39;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    article.wiki-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 32px 36px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .yaml-header { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+    .cat-badge {
+      font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;
+      background: var(--serenity-soft); color: var(--serenity-dark);
+    }
+    .tag-pill { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: #F4F5F7; color: var(--text-muted); }
+    .updated-text { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+
+    article.wiki-card h2.page-title {
+      font-size: 28px; font-weight: 800; margin-bottom: 14px;
+      border-bottom: 2px solid var(--rose-quartz); padding-bottom: 10px;
+    }
+
+    .summary-box {
+      background: linear-gradient(135deg, var(--rose-soft) 0%, var(--serenity-soft) 100%);
+      border-left: 4px solid var(--serenity);
+      padding: 14px 18px;
+      border-radius: 0 10px 10px 0;
+      margin-bottom: 24px;
+      font-size: 15px;
+    }
+
+    .section-title { font-size: 18px; font-weight: 700; margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
+    .section-title::before { content: ""; display: inline-block; width: 6px; height: 18px; border-radius: 3px; background: var(--serenity); }
+
+    table.wiki-table { width: 100%; border-collapse: collapse; margin: 12px 0 22px; font-size: 14px; }
+    table.wiki-table th, table.wiki-table td { border: 1px solid var(--border-color); padding: 10px 14px; text-align: left; }
+    table.wiki-table th { background: var(--serenity-soft); font-weight: 700; width: 26%; }
+    table.wiki-table.full-grid th { width: auto; }
+
+    a.wikilink {
+      color: var(--serenity-dark);
+      background: rgba(146, 168, 209, 0.14);
+      padding: 1px 6px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 600;
+      border-bottom: 1.5px solid var(--serenity);
+      cursor: pointer;
+    }
+    a.wikilink:hover { background: var(--rose-quartz); color: #1E2430; }
+
+    ul.wiki-bullets { padding-left: 20px; margin-bottom: 16px; }
+    ul.wiki-bullets li { margin-bottom: 8px; }
+
+    .source-box {
+      margin-top: 28px; padding-top: 16px; border-top: 1px dashed var(--border-color);
+      font-size: 13px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .source-btn {
+      background: #F1F5F9; border: 1px solid var(--border-color);
+      padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .source-btn:hover { background: var(--serenity-soft); border-color: var(--serenity); }
+
+    .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 14px 0 24px; }
+    .mini-card { border: 1px solid var(--border-color); border-radius: 10px; padding: 14px 16px; background: #FFFFFF; cursor: pointer; }
+    .mini-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--serenity); }
+    .mini-card-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+    .mini-card-sub { font-size: 12.5px; color: var(--text-muted); }
+
+    .backlinks-panel { margin-top: 24px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px 20px; }
+    .backlinks-panel h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+    .backlinks-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+    .modal-backdrop.open { display: flex; }
+    .modal-box { background: #FFFFFF; border-radius: 12px; max-width: 760px; width: 100%; max-height: 82vh; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-header { padding: 16px 20px; background: linear-gradient(90deg, var(--rose-soft), var(--serenity-soft)); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; }
+    .modal-body { padding: 20px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; background: #F8FAFC; line-height: 1.6; }
+
+    @media (max-width: 860px) {
+      body { flex-direction: column; }
+      aside.sidebar { position: static; width: 100%; }
+      main.content-wrapper { margin-left: 0; padding: 24px 18px 60px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-accent"></div>
+
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-badge">LLM Wiki Architecture</span>
+      <h1>SEVENTEEN 資料庫</h1>
+      <p>基於 AGENTS.md 規範編纂之結構化百科（5 篇 Raw 資料已匯入）</p>
+    </div>
+
+    <a href="presentation.html" class="slides-cta">📊 開啟教學型 HTML 簡報 →</a>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="搜尋成員、專輯、分隊或標籤..." />
+    </div>
+
+    <div id="navContainer"></div>
+  </aside>
+
+  <main class="content-wrapper">
+    <div class="topbar">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <button class="agents-pill" onclick="openModal('agents')">📜 檢視 AGENTS.md 規範</button>
+    </div>
+
+    <article class="wiki-card" id="wikiContent"></article>
+
+    <div class="backlinks-panel" id="backlinksPanel">
+      <h4>🔗 反向連結 (Linked References)</h4>
+      <div class="backlinks-list" id="backlinksList"></div>
+    </div>
+  </main>
+
+  <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modalTitle">檔案檢視器</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const RAW_SOURCES = {
+      "agents": {
+        title: "AGENTS.md — SEVENTEEN 資訊資料庫核心操作規範",
+        content: `# AGENTS.md — SEVENTEEN 資訊資料庫 (LLM Wiki 架構)
+
+1. 三層架構分離：
+   - raw/ (唯讀原始資料層)：嚴禁 AI 修改，作為事實溯源唯一基準（目前已匯入 5 篇原始資料）。
+   - wiki/ (AI 維護知識庫層)：包含 YAML Frontmatter、摘要、Infobox 表格與 [[雙向連結]]。
+   - AGENTS.md (操作規範層)：定義 Ingest / Query / Lint 標準作業循環。
+
+2. 視覺與語言規範：
+   - 主色調採用 SEVENTEEN 官方應援色：玫瑰石英粉 (#F7CAC9) 與寧靜藍 (#92A8D1)。
+   - 語言採用繁體中文（台灣慣用詞彙），專有名詞採「英文/韓文原名 + 中文譯名」並列標註。`
+      },
+      "raw/2015/2015-05-29-debut-17-carat.md": {
+        title: "raw/2015/2015-05-29-debut-17-carat.md (唯讀原始資料 #1)",
+        content: `# SEVENTEEN 出道與首張迷你專輯《17 CARAT》資料
+* 來源：PLEDIS Entertainment 官方公開資訊
+* 紀錄日期：2015-05-29
+
+## 重點事實
+* 出道 Showcase 日期：2015-05-26（MBC《SEVENTEEN Project：出道大作戰》第7集直播）
+* 首張迷你專輯《17 CARAT》數位音源發行日：2015-05-29
+* 實體專輯發行日：2015-06-02
+* 主打歌：〈Adore U (아낀다)〉
+* 收錄曲目（共5首）：Shining Diamond, Adore U, Ah Yeah, Jam Jam, 20
+* 成員數：13人（分為 Hip-Hop Team、Vocal Team、Performance Team 三個分隊）`
+      },
+      "raw/2017/2017-06-12-going-seventeen.md": {
+        title: "raw/2017/2017-06-12-going-seventeen.md (唯讀原始資料 #2)",
+        content: `# SEVENTEEN 自製團體綜藝《GOING SEVENTEEN》官方資料
+* 來源：PLEDIS Entertainment / SEVENTEEN 官方 YouTube 頻道
+* 開播日期：2017-06-12
+
+## 重點事實
+* 節目名稱：《GOING SEVENTEEN》(고잉 세븐틴)
+* 播出平台：官方 YouTube 頻道、Weverse
+* 固定更新時間：每週三晚間 21:00 (KST)
+* 參與人員：SEVENTEEN 全體 13 名成員
+* 代表性企劃單元：
+  - 《邏輯之夜 (Debate Night)》：由 WONWOO 擔任主持人，成員針對荒謬辯題展開認真辯論。
+  - 《DON'T LIE》：結合黑手黨遊戲與尋寶機制的心理戰系列。
+  - 《TTT (MT SVT REALITY)》：無腳本自由休假、烤肉與歌唱的療癒特輯。
+  - 《BAD CLUE》：沉浸式推理劇本殺企劃。`
+      },
+      "raw/2018/2018-03-21-bss-debut.md": {
+        title: "raw/2018/2018-03-21-bss-debut.md (唯讀原始資料 #3)",
+        content: `# SEVENTEEN 特別小分隊「夫碩順 (BSS)」出道與作品資料
+* 來源：PLEDIS Entertainment 官方公告
+* 出道日期：2018-03-21
+
+## 重點事實
+* 分隊名稱：夫碩順 / BSS (부석순)，取自成員本名（夫勝寛、李碩珉、權順榮）各一字。
+* 成員組成：DK（隊長）、HOSHI、SEUNGKWAN（共 3 人）。
+* 出道作品：數位單曲〈Just Do It (거침없이)〉（2018-03-21 發行）。
+* 代表專輯：首張單曲專輯《SECOND WIND》（2023-02-06 發行，主打歌〈Fighting (파이팅 해야지)〉）。`
+      },
+      "raw/2023/2023-04-24-fml-release.md": {
+        title: "raw/2023/2023-04-24-fml-release.md (唯讀原始資料 #4)",
+        content: `# SEVENTEEN 第10張迷你專輯《FML》官方資料
+* 來源：PLEDIS Entertainment / Hanteo Chart / IFPI 報告
+* 發行日期：2023-04-24
+
+## 重點事實
+* 雙主打歌：〈Super (손오공)〉、〈F*ck My Life〉
+* 製作團隊：WOOZI、BUMZU 主導全輯詞曲創作；S.COUPS、WONWOO、MINGYU、VERNON 參與 Rap 作詞。
+* 銷量紀錄：首週（初動）銷量突破 455 萬張，創下當時 K-POP 歷史新高，並獲選為 IFPI 2023 年全球最暢銷專輯冠軍。`
+      },
+      "raw/2024/2024-06-17-jxw-this-man.md": {
+        title: "raw/2024/2024-06-17-jxw-this-man.md (唯讀原始資料 #5)",
+        content: `# SEVENTEEN 特別小分隊「JxW (淨漢 X 圓佑)」單曲專輯《THIS MAN》資料
+* 來源：PLEDIS Entertainment 官方公告
+* 發行日期：2024-06-17
+
+## 重點事實
+* 分隊名稱：JxW / 淨漢 X 圓佑 (정한 X 원우)
+* 成員組成：JEONGHAN（Vocal Team）、WONWOO（Hip-Hop Team）（共 2 人）。
+* 出道作品：首張單曲專輯《THIS MAN》（2024-06-17 發行）。
+* 主打歌曲：〈Last Night (어젯밤)〉。`
+      }
+    };
+
+    const WIKI_PAGES = {
+      "index": {
+        title: "SEVENTEEN 知識庫總目錄 (Index)",
+        category: "general",
+        tags: ["index", "navigation", "llm-wiki"],
+        last_updated: "2026-11-24",
+        sources: [
+          "raw/2015/2015-05-29-debut-17-carat.md",
+          "raw/2017/2017-06-12-going-seventeen.md",
+          "raw/2018/2018-03-21-bss-debut.md",
+          "raw/2023/2023-04-24-fml-release.md",
+          "raw/2024/2024-06-17-jxw-this-man.md"
+        ],
+        summary: "本頁面為 SEVENTEEN 資訊資料庫的導航中樞，依據 AGENTS.md 規範建立，已完成 5 篇原始資料之攝入與事實溯源，整合 13 位成員、5 個官方與特別分隊、音樂作品、綜藝節目與大事記時間軸。",
+        renderCustom: () => `
+          <h3 class="section-title">總覽與核心紀錄</h3>
+          <div class="grid-cards">
+            <div class="mini-card" onclick="navigateTo('timeline')">
+              <div class="mini-card-title">📅 重要大事記時間軸</div>
+              <div class="mini-card-sub">2015 出道至今里程碑與紀錄</div>
+            </div>
+            <div class="mini-card" onclick="navigateTo('going-seventeen')">
+              <div class="mini-card-title">🎬 GOING SEVENTEEN</div>
+              <div class="mini-card-sub">招牌自製團體綜藝總覽與企劃</div>
+            </div>
+            <div class="mini-card" onclick="navigateTo('log')">
+              <div class="mini-card-title">📝 知識庫變更日誌 (Log)</div>
+              <div class="mini-card-sub">LLM Wiki 攝入與修訂歷史</div>
+            </div>
+          </div>
+
+          <h3 class="section-title">分隊架構 (Units)</h3>
+          <div class="grid-cards">
+            <div class="mini-card" onclick="navigateTo('hip-hop-team')">
+              <div class="mini-card-title">🎤 Hip-Hop Team</div>
+              <div class="mini-card-sub">S.COUPS · WONWOO · MINGYU · VERNON</div>
+            </div>
+            <div class="mini-card" onclick="navigateTo('vocal-team')">
+              <div class="mini-card-title">🎶 Vocal Team</div>
+              <div class="mini-card-sub">WOOZI · JEONGHAN · JOSHUA · DK · SEUNGKWAN</div>
+            </div>
+            <div class="mini-card" onclick="navigateTo('performance-team')">
+              <div class="mini-card-title">🕺 Performance Team</div>
+              <div class="mini-card-sub">HOSHI · JUN · THE 8 · DINO</div>
+            </div>
+            <div class="mini-card" onclick="navigateTo('bss')">
+              <div class="mini-card-title">⚡ 夫碩順 (BSS)</div>
+              <div class="mini-card-sub">DK · HOSHI · SEUNGKWAN 特別小分隊</div>
+            </div>
+            <div class="mini-card" onclick="navigateTo('jxw')">
+              <div class="mini-card-title">🌙 JxW (淨漢 X 圓佑)</div>
+              <div class="mini-card-sub">JEONGHAN · WONWOO 特別小分隊</div>
+            </div>
+          </div>
+
+          <h3 class="section-title">13 位成員檔案 (Members)</h3>
+          <div class="grid-cards">
+            ${[
+              ["s-coups", "🍒 S.COUPS (崔勝哲)", "總隊長 / Hip-Hop Team 隊長"],
+              ["jeonghan", "😇 JEONGHAN (尹淨漢)", "Vocal Team / JxW"],
+              ["joshua", "🦌 JOSHUA (洪知秀)", "Vocal Team"],
+              ["jun", "🐱 JUN (文俊輝)", "Performance Team"],
+              ["hoshi", "🐯 HOSHI (權順榮)", "Performance Team 隊長 / BSS"],
+              ["wonwoo", "🦊 WONWOO (全圓佑)", "Hip-Hop Team / JxW"],
+              ["woozi", "🍚 WOOZI (李知勳)", "Vocal Team 隊長 / 核心製作人"],
+              ["the8", "🐸 THE 8 (徐明浩)", "Performance Team"],
+              ["mingyu", "🐶 MINGYU (金珉奎)", "Hip-Hop Team"],
+              ["dk", "🕊️ DK (李碩珉)", "Vocal Team / BSS 隊長"],
+              ["seungkwan", "🍊 SEUNGKWAN (夫勝寛)", "Vocal Team / BSS"],
+              ["vernon", "🐢 VERNON (崔瀚率)", "Hip-Hop Team"],
+              ["dino", "🦖 DINO (李燦)", "Performance Team / 忙內"]
+            ].map(([slug, name, role]) => `
+              <div class="mini-card" onclick="navigateTo('${slug}')">
+                <div class="mini-card-title">${name}</div>
+                <div class="mini-card-sub">${role}</div>
+              </div>
+            `).join("")}
+          </div>
+
+          <h3 class="section-title">音樂作品 (Discography)</h3>
+          <ul class="wiki-bullets">
+            <li>[[2015-17-carat|《17 CARAT》]] — 2015年5月29日發行，首張迷你專輯暨正式出道作品，主打歌〈Adore U〉。</li>
+            <li>[[2023-fml|《FML》]] — 2023年4月24日發行，第10張迷你專輯，雙主打〈Super〉與〈F*ck My Life〉，獲 IFPI 全球專輯榜冠軍。</li>
+          </ul>
+        `
+      },
+
+      "timeline": {
+        title: "SEVENTEEN 重要大事記時間軸",
+        category: "general",
+        tags: ["timeline", "history"],
+        last_updated: "2026-11-24",
+        sources: [
+          "raw/2015/2015-05-29-debut-17-carat.md",
+          "raw/2017/2017-06-12-going-seventeen.md",
+          "raw/2018/2018-03-21-bss-debut.md",
+          "raw/2023/2023-04-24-fml-release.md",
+          "raw/2024/2024-06-17-jxw-this-man.md"
+        ],
+        summary: "記錄 SEVENTEEN 自 2015 年正式出道至今的重要專輯發行、分隊成立與全球音樂里程碑。",
+        bullets: [
+          "<strong>2015-05-26</strong>：於 MBC《SEVENTEEN Project：出道大作戰》Showcase 正式出道。",
+          "<strong>2015-05-29</strong>：發行首張迷你專輯 [[2015-17-carat|《17 CARAT》]]，主打歌為〈Adore U (아낀다)〉。",
+          "<strong>2017-06-12</strong>：招牌自製團體綜藝 [[going-seventeen|《GOING SEVENTEEN》]] 正式開播。",
+          "<strong>2018-03-21</strong>：特別小分隊 [[bss|夫碩順 (BSS)]] 發行數位單曲〈Just Do It (거침없이)〉正式出道。",
+          "<strong>2023-04-24</strong>：發行第10張迷你專輯 [[2023-fml|《FML》]]，首週銷量突破 455 萬張並奪得 IFPI 2023 全球專輯榜冠軍。",
+          "<strong>2024-06-17</strong>：特別小分隊 [[jxw|JxW (淨漢 X 圓佑)]] 發行首張單曲專輯《THIS MAN》。"
+        ]
+      },
+
+      "log": {
+        title: "知識庫變更日誌 (Log)",
+        category: "general",
+        tags: ["log", "changelog"],
+        last_updated: "2026-11-24",
+        sources: [
+          "raw/2015/2015-05-29-debut-17-carat.md",
+          "raw/2017/2017-06-12-going-seventeen.md",
+          "raw/2018/2018-03-21-bss-debut.md",
+          "raw/2023/2023-04-24-fml-release.md",
+          "raw/2024/2024-06-17-jxw-this-man.md"
+        ],
+        summary: "依據 AGENTS.md 規範，依時間倒序記錄每次對 wiki/ 進行的資料攝入（Ingest）、頁面建立與交叉連結維護紀錄。",
+        bullets: [
+          "<strong>[2026-11-24] presentation-build</strong>：依據 AGENTS.md 與 wiki/ 知識庫生成教學型互動簡報 <code>presentation.html</code>。",
+          "<strong>[2026-11-24] ingest-batch</strong>：補齊並攝入 <code>raw/2017/2017-06-12-going-seventeen.md</code>、<code>raw/2018/2018-03-21-bss-debut.md</code>、<code>raw/2024/2024-06-17-jxw-this-man.md</code> 共 3 篇原始資料，完成 5 篇 raw 事實溯源閉環。",
+          "<strong>[2026-11-16] web-build</strong>：依據 AGENTS.md 建立可互動瀏覽之 LLM Wiki 網頁前端，整合玫瑰石英粉與寧靜藍視覺系統與反向連結引擎。",
+          "<strong>[2026-11-16] ingest</strong>：攝入 <code>raw/2023/2023-04-24-fml-release.md</code>，建立 [[2023-fml|《FML》]] 專輯頁面並同步更新 [[woozi|WOOZI]]、[[s-coups|S.COUPS]] 與 [[timeline|大事記時間軸]]。",
+          "<strong>[2026-11-16] init</strong>：初始化 SEVENTEEN LLM Wiki 專案架構，建立 13 位成員、5 個分隊與 [[2015-17-carat|《17 CARAT》]] 基礎條目。"
+        ]
+      },
+
+      "hip-hop-team": {
+        title: "Hip-Hop Team (힙합팀)",
+        category: "unit",
+        tags: ["unit", "hip-hop-team"],
+        last_updated: "2026-11-16",
+        sources: ["raw/2015/2015-05-29-debut-17-carat.md"],
+        summary: "SEVENTEEN 三大固有分隊之一，由 4 位 Rap 擔當成員組成，主導團體歌曲的 Rap 詞曲創作與強烈舞台張力。",
+        infobox: [
+          ["分隊名稱", "Hip-Hop Team (힙합팀)"],
+          ["分隊隊長", "[[s-coups|S.COUPS (崔勝哲)]]"],
+          ["成員名單", "[[s-coups|S.COUPS]]、[[wonwoo|WONWOO]]、[[mingyu|MINGYU]]、[[vernon|VERNON]]"],
+          ["代表曲目", "〈Ah Yeah〉([[2015-17-carat|《17 CARAT》]])、〈Fire〉([[2023-fml|《FML》]])"]
+        ]
+      },
+
+      "vocal-team": {
+        title: "Vocal Team (보컬팀)",
+        category: "unit",
+        tags: ["unit", "vocal-team"],
+        last_updated: "2026-11-16",
+        sources: ["raw/2015/2015-05-29-debut-17-carat.md"],
+        summary: "SEVENTEEN 三大固有分隊之一，由 5 位成員組成，負責團體的歌唱、細膩和聲與抒情曲目演繹，並由主要製作人 WOOZI 擔任隊長。",
+        infobox: [
+          ["分隊名稱", "Vocal Team (보컬팀)"],
+          ["分隊隊長", "[[woozi|WOOZI (李知勳)]]"],
+          ["成員名單", "[[woozi|WOOZI]]、[[jeonghan|JEONGHAN]]、[[joshua|JOSHUA]]、[[dk|DK]]、[[seungkwan|SEUNGKWAN]]"],
+          ["代表曲目", "〈20〉([[2015-17-carat|《17 CARAT》]])、〈Dust (먼지)〉([[2023-fml|《FML》]])"]
+        ]
+      },
+
+      "performance-team": {
+        title: "Performance Team (퍼포먼스팀)",
+        category: "unit",
+        tags: ["unit", "performance-team"],
+        last_updated: "2026-11-16",
+        sources: ["raw/2015/2015-05-29-debut-17-carat.md"],
+        summary: "SEVENTEEN 三大固有分隊之一，由 4 位舞蹈專長成員組成，核心參與團體編舞創作與高難度刀群舞設計。",
+        infobox: [
+          ["分隊名稱", "Performance Team (퍼포먼스팀)"],
+          ["分隊隊長", "[[hoshi|HOSHI (權順榮)]]"],
+          ["成員名單", "[[hoshi|HOSHI]]、[[jun|JUN]]、[[the8|THE 8]]、[[dino|DINO]]"],
+          ["代表曲目", "〈Jam Jam〉([[2015-17-carat|《17 CARAT》]])、〈I Don't Understand But I Luv U〉([[2023-fml|《FML》]])"]
+        ]
+      },
+
+      "bss": {
+        title: "夫碩順 (BSS / 부석순)",
+        category: "unit",
+        tags: ["unit", "bss", "sub-unit"],
+        last_updated: "2026-11-24",
+        sources: ["raw/2018/2018-03-21-bss-debut.md"],
+        summary: "由 SEVENTEEN 成員 SEUNGKWAN、DK、HOSHI 組成的首個官方特別小分隊，團名取自三人本名（夫勝寛、李碩珉、權順榮）各一字，以充滿能量與歡樂的舞台風格著稱。",
+        infobox: [
+          ["分隊名稱", "夫碩順 / BSS (부석순)"],
+          ["分隊隊長", "[[dk|DK (李碩珉)]]"],
+          ["成員名單", "[[dk|DK]]、[[hoshi|HOSHI]]、[[seungkwan|SEUNGKWAN]]"],
+          ["出道日期", "2018-03-21"],
+          ["代表作品", "〈Just Do It (거침없이)〉(2018)、《SECOND WIND》(2023)"]
+        ]
+      },
+
+      "jxw": {
+        title: "JxW (淨漢 X 圓佑)",
+        category: "unit",
+        tags: ["unit", "jxw", "sub-unit"],
+        last_updated: "2026-11-24",
+        sources: ["raw/2024/2024-06-17-jxw-this-man.md"],
+        summary: "由 Vocal Team 成員 JEONGHAN 與 Hip-Hop Team 成員 WONWOO 組成的特別小分隊，於 2024 年 6 月發行首張單曲專輯《THIS MAN》。",
+        infobox: [
+          ["分隊名稱", "JxW / 淨漢 X 圓佑 (정한 X 원우)"],
+          ["成員名單", "[[jeonghan|JEONGHAN]]、[[wonwoo|WONWOO]]"],
+          ["出道日期", "2024-06-17"],
+          ["代表作品", "《THIS MAN》（主打歌〈Last Night〉）"]
+        ]
+      },
+
+      "2015-17-carat": {
+        title: "《17 CARAT》",
+        category: "discography",
+        tags: ["discography", "mini-album", "2015", "debut"],
+        last_updated: "2026-11-16",
+        sources: ["raw/2015/2015-05-29-debut-17-carat.md"],
+        summary: "《17 CARAT》是 SEVENTEEN 的首張迷你專輯暨正式出道作品，於 2015 年 5 月 29 日發行數位音源（實體專輯於 6 月 2 日發行），收錄全體曲與三個分隊的專屬曲目。",
+        infobox: [
+          ["發行日期", "2015-05-29（數位）/ 2015-06-02（實體）"],
+          ["專輯類型", "迷你專輯 (1st Mini Album)"],
+          ["主打歌曲", "〈Adore U (아낀다)〉"],
+          ["發行公司", "PLEDIS Entertainment"],
+          ["初動銷量 (Hanteo)", "[待查證]"]
+        ],
+        tracklist: [
+          ["01", "Shining Diamond", "全體", "Intro / 先行公開曲"],
+          ["02", "Adore U (아낀다)", "全體", "<strong>主打歌</strong>"],
+          ["03", "Ah Yeah", "[[hip-hop-team|Hip-Hop Team]]", "分隊曲"],
+          ["04", "Jam Jam", "[[performance-team|Performance Team]]", "分隊曲"],
+          ["05", "20", "[[vocal-team|Vocal Team]]", "分隊曲"]
+        ]
+      },
+
+      "2023-fml": {
+        title: "《FML》",
+        category: "discography",
+        tags: ["discography", "mini-album", "2023", "ifpi-winner"],
+        last_updated: "2026-11-16",
+        sources: ["raw/2023/2023-04-24-fml-release.md"],
+        summary: "《FML》是 SEVENTEEN 於 2023 年 4 月 24 日發行的第 10 張迷你專輯，採用〈Super (손오공)〉與〈F*ck My Life〉雙主打配置，首週銷量突破 455 萬張並榮登 IFPI 2023 年全球最暢銷專輯冠軍。",
+        infobox: [
+          ["發行日期", "2023-04-24"],
+          ["專輯類型", "迷你專輯 (10th Mini Album)"],
+          ["主打歌曲", "〈Super (손오공)〉、〈F*ck My Life〉"],
+          ["核心製作", "[[woozi|WOOZI]]、BUMZU"],
+          ["初動銷量 (Hanteo)", "4,550,214 張"]
+        ],
+        tracklist: [
+          ["01", "F*ck My Life", "全體", "<strong>雙主打歌</strong>"],
+          ["02", "Super (손오공)", "全體", "<strong>雙主打歌</strong>"],
+          ["03", "Fire", "[[hip-hop-team|Hip-Hop Team]]", "分隊曲"],
+          ["04", "I Don't Understand But I Luv U", "[[performance-team|Performance Team]]", "分隊曲"],
+          ["05", "Dust (먼지)", "[[vocal-team|Vocal Team]]", "分隊曲"],
+          ["06", "April shower", "全體", "收錄曲"]
+        ]
+      },
+
+      "going-seventeen": {
+        title: "《GOING SEVENTEEN》(고잉 세븐틴)",
+        category: "variety",
+        tags: ["variety", "going-seventeen", "youtube"],
+        last_updated: "2026-11-24",
+        sources: ["raw/2017/2017-06-12-going-seventeen.md"],
+        summary: "《GOING SEVENTEEN》是 SEVENTEEN 的招牌自製團體綜藝節目，於官方 YouTube 與 Weverse 平台播出，以高完成度的情境劇、心理博弈與創意企劃聞名。",
+        infobox: [
+          ["播出平台", "YouTube / Weverse"],
+          ["開播日期", "2017-06-12"],
+          ["固定更新時間", "每週三晚間 21:00 (KST)"],
+          ["參與成員", "[[s-coups|S.COUPS]] 等全體 13 名成員"]
+        ],
+        bullets: [
+          "<strong>《邏輯之夜 (Debate Night)》</strong>：針對無厘頭辯題展開一本正經的荒謬辯論，由 [[wonwoo|WONWOO]] 擔任經典主持人。",
+          "<strong>《DON'T LIE》</strong>：結合黑手黨遊戲與尋寶機制的高張力心理戰系列。",
+          "<strong>《TTT (MT SVT REALITY)》</strong>：成員們無腳本自由休假、烤肉與歌唱的招牌療癒特輯。",
+          "<strong>《BAD CLUE》</strong>：沉浸式推理劇本殺企劃。"
+        ]
+      }
+    };
+
+    const MEMBERS = [
+      ["s-coups", "S.COUPS (에스쿱스 / 崔勝哲)", "hip-hop-team", "Hip-Hop Team", "1995-08-08", "韓國", "總隊長、Hip-Hop Team 隊長、Rap", "🍒 / 駱駝", "@sound_of_coups", "SEVENTEEN 的總隊長兼 [[hip-hop-team|Hip-Hop Team]] 隊長，負責統籌團隊方向並參與多首主打與收錄曲 Rap 作詞（如 [[2023-fml|《FML》]]）。", ["raw/2015/2015-05-29-debut-17-carat.md", "raw/2023/2023-04-24-fml-release.md"]],
+      ["jeonghan", "JEONGHAN (정한 / 尹淨漢)", "vocal-team", "Vocal Team", "1995-10-04", "韓國", "Vocal Team 成員、副唱", "😇 / 兔子", "@jeonghaniyoo_n", "隸屬於 [[vocal-team|Vocal Team]]，以清亮音色與機智的綜藝感著稱，同時也是特別小分隊 [[jxw|JxW (淨漢 X 圓佑)]] 的成員。", ["raw/2015/2015-05-29-debut-17-carat.md", "raw/2024/2024-06-17-jxw-this-man.md"]],
+      ["joshua", "JOSHUA (조슈아 / 洪知秀)", "vocal-team", "Vocal Team", "1995-12-30", "美國", "Vocal Team 成員、副唱", "🦌 / 鹿", "@joshu_acoustic", "出生於美國洛杉磯的韓裔美籍成員，隸屬於 [[vocal-team|Vocal Team]]，擅長原聲吉他改編與英文歌曲演繹。", ["raw/2015/2015-05-29-debut-17-carat.md"]],
+      ["jun", "JUN (준 / 文俊輝)", "performance-team", "Performance Team", "1996-06-10", "中國", "Performance Team 成員、副唱", "🐱 / 貓", "@junhui_moon", "來自中國廣東深圳的成員，隸屬於 [[performance-team|Performance Team]]，同時在華語影視戲劇與 Solo 單曲領域表現活躍。", ["raw/2015/2015-05-29-debut-17-carat.md"]],
+      ["hoshi", "HOSHI (호시 / 權順榮)", "performance-team", "Performance Team", "1996-06-15", "韓國", "Performance Team 隊長、主舞、副唱", "🐯 / 老虎 / 倉鼠", "@ho5hi_kwon", "SEVENTEEN 的 [[performance-team|Performance Team]] 隊長兼核心編舞創作者，亦為特別小分隊 [[bss|夫碩順 (BSS)]] 成員。", ["raw/2015/2015-05-29-debut-17-carat.md", "raw/2018/2018-03-21-bss-debut.md"]],
+      ["wonwoo", "WONWOO (원우 / 全圓佑)", "hip-hop-team", "Hip-Hop Team", "1996-07-17", "韓國", "Hip-Hop Team 成員、Rap", "🦊 / 狐狸 / 黑貓", "@everyone_woo", "隸屬於 [[hip-hop-team|Hip-Hop Team]]，以低沉嗓音與細膩歌詞創作見長，亦與 [[jeonghan|JEONGHAN]] 組成特別小分隊 [[jxw|JxW]]。", ["raw/2015/2015-05-29-debut-17-carat.md", "raw/2024/2024-06-17-jxw-this-man.md"]],
+      ["woozi", "WOOZI (우지 / 李知勳)", "vocal-team", "Vocal Team", "1996-11-22", "韓國", "Vocal Team 隊長、主要音樂製作人", "🍚 / 貓咪", "@woozi_universefactory", "SEVENTEEN 的 [[vocal-team|Vocal Team]] 隊長與核心音樂製作人，從出道作 [[2015-17-carat|《17 CARAT》]] 到 [[2023-fml|《FML》]] 主導絕大多數曲目的詞曲創作。", ["raw/2015/2015-05-29-debut-17-carat.md", "raw/2023/2023-04-24-fml-release.md"]],
+      ["the8", "THE 8 (디에잇 / 徐明浩)", "performance-team", "Performance Team", "1997-11-07", "中國", "Performance Team 成員、領舞、副唱", "🐸 / 青蛙 / 無限符號", "@xuminghao_o", "來自中國遼寧海城的成員，隸屬於 [[performance-team|Performance Team]]，融合現代舞、武術與當代藝術美學。", ["raw/2015/2015-05-29-debut-17-carat.md"]],
+      ["mingyu", "MINGYU (민규 / 金珉奎)", "hip-hop-team", "Hip-Hop Team", "1997-04-06", "韓國", "Hip-Hop Team 成員、Rap", "🐶 / 大型犬", "@min9yu_k", "隸屬於 [[hip-hop-team|Hip-Hop Team]]，參與多首專輯詞曲創作，並在時尚與國際品牌領域具備高度影響力。", ["raw/2015/2015-05-29-debut-17-carat.md", "raw/2023/2023-04-24-fml-release.md"]],
+      ["dk", "DK (도겸 / 李碩珉)", "vocal-team", "Vocal Team", "1997-02-18", "韓國", "Vocal Team 成員、主唱", "🕊️ / 鴿子 / 黃金獵犬", "@dk_is_dokyeom", "SEVENTEEN 的主唱之一，隸屬於 [[vocal-team|Vocal Team]]，以極具爆發力的現場唱功著稱，並擔任小分隊 [[bss|夫碩順 (BSS)]] 隊長。", ["raw/2015/2015-05-29-debut-17-carat.md", "raw/2018/2018-03-21-bss-debut.md"]],
+      ["seungkwan", "SEUNGKWAN (승관 / 夫勝寛)", "vocal-team", "Vocal Team", "1998-01-16", "韓國", "Vocal Team 成員、主唱", "🍊 / 橘子 / 熊", "@pledis_boos", "SEVENTEEN 的主唱之一，隸屬於 [[vocal-team|Vocal Team]] 與小分隊 [[bss|夫碩順 (BSS)]]，在音樂舞台與韓國綜藝領域皆表現亮眼。", ["raw/2015/2015-05-29-debut-17-carat.md", "raw/2018/2018-03-21-bss-debut.md"]],
+      ["vernon", "VERNON (버논 / 崔瀚率)", "hip-hop-team", "Hip-Hop Team", "1998-02-18", "韓國 / 美國", "Hip-Hop Team 成員、Rap", "🐢 / 烏龜", "@vernonline", "韓美混血成員，隸屬於 [[hip-hop-team|Hip-Hop Team]]，積極參與團體及個人音樂的詞曲製作。", ["raw/2015/2015-05-29-debut-17-carat.md", "raw/2023/2023-04-24-fml-release.md"]],
+      ["dino", "DINO (디노 / 李燦)", "performance-team", "Performance Team", "1999-02-11", "韓國", "Performance Team 成員、主舞、忙內", "🦖 / 恐龍 / 水獺", "@feat.dino", "SEVENTEEN 的忙內，隸屬於 [[performance-team|Performance Team]]，以精準強悍的舞蹈控制力與全能舞台表現著稱。", ["raw/2015/2015-05-29-debut-17-carat.md"]]
+    ];
+
+    MEMBERS.forEach(([slug, title, unitSlug, unitName, bday, nat, role, symbol, ig, summary, srcs]) => {
+      WIKI_PAGES[slug] = {
+        title,
+        category: "member",
+        tags: ["member", unitSlug],
+        last_updated: "2026-11-24",
+        sources: srcs,
+        summary,
+        infobox: [
+          ["標準標題", title],
+          ["出生日期", bday],
+          ["國籍", nat],
+          ["所屬分隊", `[[${unitSlug}|${unitName}]]`],
+          ["隊內定位", role],
+          ["代表動物/符號", symbol],
+          ["個人 Instagram", `<code>${ig}</code>`]
+        ],
+        bullets: [
+          "<strong>代表作品參與</strong>：參與 [[2015-17-carat|《17 CARAT》]]、[[2023-fml|《FML》]] 等歷年專輯製作與舞台演出。",
+          "<strong>綜藝活躍</strong>：固定出演團體自製綜藝 [[going-seventeen|《GOING SEVENTEEN》]]。"
+        ]
+      };
+    });
+
+    let currentSlug = "index";
+
+    function parseWikilinks(text) {
+      if (!text) return "";
+      return text.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (_, target, label) => {
+        const cleanSlug = target.trim().toLowerCase();
+        const display = (label || target).trim();
+        const exists = Boolean(WIKI_PAGES[cleanSlug]);
+        return `<a class="wikilink" onclick="navigateTo('${cleanSlug}')" title="${exists ? '前往條目：' + WIKI_PAGES[cleanSlug].title : '尚未建立條目'}">${display}</a>`;
+      });
+    }
+
+    function renderSidebar(filterText = "") {
+      const q = filterText.trim().toLowerCase();
+      const groups = [
+        { label: "導航與總覽", items: ["index", "timeline", "going-seventeen", "log"] },
+        { label: "分隊 (Units)", items: ["hip-hop-team", "vocal-team", "performance-team", "bss", "jxw"] },
+        { label: "音樂作品 (Discography)", items: ["2015-17-carat", "2023-fml"] },
+        { label: "成員檔案 (13 Members)", items: MEMBERS.map(m => m[0]) }
+      ];
+
+      const navContainer = document.getElementById("navContainer");
+      navContainer.innerHTML = groups.map(g => {
+        const filtered = g.items.filter(slug => {
+          const p = WIKI_PAGES[slug];
+          if (!p) return false;
+          if (!q) return true;
+          return (
+            slug.includes(q) ||
+            p.title.toLowerCase().includes(q) ||
+            p.tags.some(t => t.toLowerCase().includes(q)) ||
+            p.summary.toLowerCase().includes(q)
+          );
+        });
+
+        if (filtered.length === 0) return "";
+        return `
+          <div class="nav-group" style="margin-bottom: 14px;">
+            <h3>${g.label}</h3>
+            <ul class="nav-list">
+              ${filtered.map(slug => {
+                const p = WIKI_PAGES[slug];
+                const shortTitle = p.title.split("(")[0].trim();
+                return `
+                  <li class="nav-item ${slug === currentSlug ? 'active' : ''}" onclick="navigateTo('${slug}')">
+                    <span>${shortTitle}</span>
+                    <span class="nav-tag">${p.category}</span>
+                  </li>
+                `;
+              }).join("")}
+            </ul>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderBacklinks(targetSlug) {
+      const backlinks = [];
+      const regex = new RegExp(`\[\[${targetSlug}(\|[^\]]+)?\]\]`, "i");
+
+      Object.entries(WIKI_PAGES).forEach(([slug, page]) => {
+        if (slug === targetSlug) return;
+        const blob = JSON.stringify(page);
+        if (regex.test(blob)) {
+          backlinks.push({ slug, title: page.title });
+        }
+      });
+
+      const listEl = document.getElementById("backlinksList");
+      if (backlinks.length === 0) {
+        listEl.innerHTML = `<span style="font-size:13px;color:var(--text-muted);">目前尚無其他頁面引用此條目。</span>`;
+      } else {
+        listEl.innerHTML = backlinks.map(b =>
+          `<a class="wikilink" onclick="navigateTo('${b.slug}')">${b.title}</a>`
+        ).join("");
+      }
+    }
+
+    function navigateTo(slug) {
+      if (!WIKI_PAGES[slug]) return;
+      currentSlug = slug;
+      const page = WIKI_PAGES[slug];
+
+      document.getElementById("breadcrumb").innerHTML = `
+        <span class="link" onclick="navigateTo('index')">wiki</span>
+        <span>/</span>
+        <span>${page.category}</span>
+        <span>/</span>
+        <strong>${slug}.md</strong>
+      `;
+
+      let infoboxHtml = "";
+      if (page.infobox) {
+        infoboxHtml = `
+          <h3 class="section-title">核心資訊摘要</h3>
+          <table class="wiki-table">
+            <tbody>
+              ${page.infobox.map(([k, v]) => `
+                <tr>
+                  <th>${k}</th>
+                  <td>${parseWikilinks(v)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      let tracklistHtml = "";
+      if (page.tracklist) {
+        tracklistHtml = `
+          <h3 class="section-title">收錄曲目列表</h3>
+          <table class="wiki-table full-grid">
+            <thead>
+              <tr>
+                <th>曲序</th>
+                <th>曲名</th>
+                <th>演唱分隊 / 成員</th>
+                <th>備註</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${page.tracklist.map(([no, song, unit, note]) => `
+                <tr>
+                  <td>${no}</td>
+                  <td>${song}</td>
+                  <td>${parseWikilinks(unit)}</td>
+                  <td>${note}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      let bulletsHtml = "";
+      if (page.bullets) {
+        bulletsHtml = `
+          <h3 class="section-title">詳細紀錄與特色</h3>
+          <ul class="wiki-bullets">
+            ${page.bullets.map(b => `<li>${parseWikilinks(b)}</li>`).join("")}
+          </ul>
+        `;
+      }
+
+      const customHtml = page.renderCustom ? page.renderCustom() : "";
+      const sourcesHtml = (page.sources || []).map(src =>
+        `<button class="source-btn" onclick="openModal('${src}')">📄 檢視原始資料：${src}</button>`
+      ).join(" ");
+
+      document.getElementById("wikiContent").innerHTML = `
+        <div class="yaml-header">
+          <span class="cat-badge">${page.category.toUpperCase()}</span>
+          ${page.tags.map(t => `<span class="tag-pill">#${t}</span>`).join("")}
+          <span class="updated-text">最後更新：${page.last_updated}</span>
+        </div>
+        <h2 class="page-title">${page.title}</h2>
+        <div class="summary-box">${parseWikilinks(page.summary)}</div>
+        ${customHtml}
+        ${infoboxHtml}
+        ${tracklistHtml}
+        ${bulletsHtml}
+        <div class="source-box">
+          <span>🔒 事實溯源（<code>raw/</code> 唯讀層）：</span>
+          <div>${sourcesHtml || "無外部來源"}</div>
+        </div>
+      `;
+
+      renderSidebar(document.getElementById("searchInput").value);
+      renderBacklinks(slug);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function openModal(key) {
+      const item = RAW_SOURCES[key];
+      if (!item) return;
+      document.getElementById("modalTitle").textContent = item.title;
+      document.getElementById("modalBody").textContent = item.content;
+      document.getElementById("modalBackdrop").classList.add("open");
+    }
+
+    function closeModal() {
+      document.getElementById("modalBackdrop").classList.remove("open");
+    }
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      renderSidebar(e.target.value);
+    });
+
+    navigateTo("index");
+  </script>
+</body>
+</html>
